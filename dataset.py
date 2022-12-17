@@ -1,22 +1,20 @@
-from typing import Any, Dict, Optional, Tuple
-
+import json
 import os
 import subprocess
-import torch
-import timm
-import json
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, Optional, Tuple
 
 import pytorch_lightning as pl
-import torchvision.transforms as T
+import timm
+import torch
 import torch.nn.functional as F
-
-from pathlib import Path
-from torchvision.datasets import ImageFolder
+import torchvision.transforms as T
+from pytorch_lightning import loggers as pl_loggers
 from pytorch_lightning.plugins.environments import LightningEnvironment
 from torch.utils.data import DataLoader, Dataset
 from torchmetrics.functional import accuracy
-from pytorch_lightning import loggers as pl_loggers
-from datetime import datetime
+from torchvision.datasets import ImageFolder
 
 
 class FlowerDataModule(pl.LightningDataModule):
@@ -33,16 +31,18 @@ class FlowerDataModule(pl.LightningDataModule):
         # this line allows to access init params with 'self.hparams' attribute
         # also ensures init params will be stored in ckpt
         self.save_hyperparameters(logger=False)
-        
+
         self.train_data_dir = train_data_dir
         self.test_data_dir = test_data_dir
-        
+
         # data transformations
-        self.transforms = T.Compose([
-            T.ToTensor(),
-            T.Resize((224, 224)),
-            T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        ])
+        self.transforms = T.Compose(
+            [
+                T.ToTensor(),
+                T.Resize((224, 224)),
+                T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            ]
+        )
 
         self.data_train: Optional[Dataset] = None
         self.data_test: Optional[Dataset] = None
@@ -50,7 +50,7 @@ class FlowerDataModule(pl.LightningDataModule):
     @property
     def num_classes(self):
         return len(self.data_train.classes)
-    
+
     @property
     def classes(self):
         return self.data_train.classes
@@ -70,7 +70,7 @@ class FlowerDataModule(pl.LightningDataModule):
         if not self.data_train and not self.data_test:
             trainset = ImageFolder(self.train_data_dir, transform=self.transforms)
             testset = ImageFolder(self.test_data_dir, transform=self.transforms)
-            
+
             self.data_train, self.data_test = trainset, testset
 
     def train_dataloader(self):
@@ -111,4 +111,3 @@ class FlowerDataModule(pl.LightningDataModule):
     def load_state_dict(self, state_dict: Dict[str, Any]):
         """Things to do when loading checkpoint."""
         pass
-

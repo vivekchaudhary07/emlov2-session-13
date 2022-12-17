@@ -1,22 +1,21 @@
-from typing import Any, Dict, Optional, Tuple
-
+import json
 import os
 import subprocess
-import torch
-import timm
-import json
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, Optional, Tuple
 
 import pytorch_lightning as pl
-import torchvision.transforms as T
+import timm
+import torch
 import torch.nn.functional as F
-
-from pathlib import Path
-from torchvision.datasets import ImageFolder
+import torchvision.transforms as T
+from pytorch_lightning import loggers as pl_loggers
 from pytorch_lightning.plugins.environments import LightningEnvironment
 from torch.utils.data import DataLoader, Dataset
 from torchmetrics.functional import accuracy
-from pytorch_lightning import loggers as pl_loggers
-from datetime import datetime
+from torchvision.datasets import ImageFolder
+
 
 class LitResnet(pl.LightningModule):
     def __init__(self, num_classes=10, lr=0.05):
@@ -24,7 +23,9 @@ class LitResnet(pl.LightningModule):
 
         self.save_hyperparameters()
         self.num_classes = num_classes
-        self.model = timm.create_model('resnet18', pretrained=True, num_classes=num_classes)
+        self.model = timm.create_model(
+            "resnet18", pretrained=True, num_classes=num_classes
+        )
 
     def forward(self, x):
         out = self.model(x)

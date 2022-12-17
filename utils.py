@@ -15,11 +15,12 @@ import urllib.error
 import urllib.request
 import warnings
 import zipfile
+from typing import (IO, Any, Callable, Dict, Iterable, Iterator, List,
+                    Optional, Tuple, TypeVar)
+from urllib.parse import urlparse
+
 import numpy as np
 import requests
-
-from urllib.parse import urlparse
-from typing import Any, Callable, Dict, IO, Iterable, Iterator, List, Optional, Tuple, TypeVar
 
 
 def _extract_tar(from_path: str, to_path: str, compression: Optional[str]) -> None:
@@ -35,7 +36,11 @@ _ZIP_COMPRESSION_MAP: Dict[str, int] = {
 
 def _extract_zip(from_path: str, to_path: str, compression: Optional[str]) -> None:
     with zipfile.ZipFile(
-        from_path, "r", compression=_ZIP_COMPRESSION_MAP[compression] if compression else zipfile.ZIP_STORED
+        from_path,
+        "r",
+        compression=_ZIP_COMPRESSION_MAP[compression]
+        if compression
+        else zipfile.ZIP_STORED,
     ) as zip:
         zip.extractall(to_path)
 
@@ -92,11 +97,19 @@ def _detect_file_type(file: str) -> Tuple[str, Optional[str], Optional[str]]:
 
         return suffix, None, suffix
 
-    valid_suffixes = sorted(set(_FILE_TYPE_ALIASES) | set(_ARCHIVE_EXTRACTORS) | set(_COMPRESSED_FILE_OPENERS))
-    raise RuntimeError(f"Unknown compression or archive type: '{suffix}'.\nKnown suffixes are: '{valid_suffixes}'.")
+    valid_suffixes = sorted(
+        set(_FILE_TYPE_ALIASES)
+        | set(_ARCHIVE_EXTRACTORS)
+        | set(_COMPRESSED_FILE_OPENERS)
+    )
+    raise RuntimeError(
+        f"Unknown compression or archive type: '{suffix}'.\nKnown suffixes are: '{valid_suffixes}'."
+    )
 
 
-def _decompress(from_path: str, to_path: Optional[str] = None, remove_finished: bool = False) -> str:
+def _decompress(
+    from_path: str, to_path: Optional[str] = None, remove_finished: bool = False
+) -> str:
     r"""Decompress a file.
     The compression is automatically detected from the file name.
     Args:
@@ -111,7 +124,9 @@ def _decompress(from_path: str, to_path: Optional[str] = None, remove_finished: 
         raise RuntimeError(f"Couldn't detect a compression from suffix {suffix}.")
 
     if to_path is None:
-        to_path = from_path.replace(suffix, archive_type if archive_type is not None else "")
+        to_path = from_path.replace(
+            suffix, archive_type if archive_type is not None else ""
+        )
 
     # We don't need to check for a missing key here, since this was already done in _detect_file_type()
     compressed_file_opener = _COMPRESSED_FILE_OPENERS[compression]
@@ -123,9 +138,11 @@ def _decompress(from_path: str, to_path: Optional[str] = None, remove_finished: 
         os.remove(from_path)
 
     return to_path
-    
 
-def extract_archive(from_path: str, to_path: Optional[str] = None, remove_finished: bool = False) -> str:
+
+def extract_archive(
+    from_path: str, to_path: Optional[str] = None, remove_finished: bool = False
+) -> str:
     """Extract an archive.
     The archive type and a possible compression is automatically detected from the file name. If the file is compressed
     but not an archive the call is dispatched to :func:`decompress`.
@@ -156,4 +173,3 @@ def extract_archive(from_path: str, to_path: Optional[str] = None, remove_finish
         os.remove(from_path)
 
     return to_path
-

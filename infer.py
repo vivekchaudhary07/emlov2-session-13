@@ -8,8 +8,9 @@ def model_fn(model_dir):
     model = torch.jit.load(f"{model_dir}/model.scripted.pt")
 
     model.to(device).eval()
-    
+
     return model
+
 
 # data preprocessing
 def input_fn(request_body, request_content_type):
