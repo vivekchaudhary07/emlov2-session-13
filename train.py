@@ -1,22 +1,15 @@
 import json
 import os
-import subprocess
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
 import pytorch_lightning as pl
-import timm
 import torch
-import torch.nn.functional as F
-import torchvision.transforms as T
 from pytorch_lightning import loggers as pl_loggers
-from pytorch_lightning.plugins.environments import LightningEnvironment
-from torch.utils.data import DataLoader, Dataset
-from torchmetrics.functional import accuracy
+from pytorch_lightning.callbacks import TQDMProgressBar
 from torchvision.datasets import ImageFolder
 
-from dataset import FlowerDataModule
+from dataset import IntelImgClfDataModule
 from model import LitResnet
 
 
@@ -42,8 +35,12 @@ def train(model, datamodule, sm_training_env):
         save_dir=ml_root / "output" / "tensorboard" / sm_training_env["job_name"]
     )
 
-    trainer = pl.Trainer(max_epochs=5, accelerator="auto", logger=[tb_logger])
-
+    trainer = pl.Trainer(
+        max_epochs=5,
+        accelerator="auto",
+        logger=[tb_logger],
+        callbacks=[TQDMProgressBar(refresh_rate=5)],
+    )
     trainer.fit(model, datamodule)
 
     return trainer
@@ -51,7 +48,6 @@ def train(model, datamodule, sm_training_env):
 
 def save_scripted_model(model, output_dir):
     script = model.to_torchscript()
-
     # save for use in production environment
     torch.jit.save(script, output_dir / "model.scripted.pt")
 
@@ -66,12 +62,13 @@ if __name__ == "__main__":
 
     print(":: Classnames: ", img_dset.classes)
 
-    datamodule = FlowerDataModule(
-        train_data_dir=train_channel, test_data_dir=test_channel, num_workers=num_cpus
-    )
+    datamodule = IntelImgClfDataModule(data_dir="", num_workers=num_cpus)
     datamodule.setup()
 
     model = LitResnet(num_classes=datamodule.num_classes)
+
+    idx_to_class = {k: v for v, k in datamodule.data_train.class_to_idx.items()}
+    model.idx_to_class = idx_to_class
 
     sm_training_env = get_training_env()
 

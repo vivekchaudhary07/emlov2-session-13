@@ -1,27 +1,16 @@
-import json
-import os
-import subprocess
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
 import pytorch_lightning as pl
-import timm
-import torch
-import torch.nn.functional as F
 import torchvision.transforms as T
-from pytorch_lightning import loggers as pl_loggers
-from pytorch_lightning.plugins.environments import LightningEnvironment
 from torch.utils.data import DataLoader, Dataset
-from torchmetrics.functional import accuracy
 from torchvision.datasets import ImageFolder
 
 
-class FlowerDataModule(pl.LightningDataModule):
+class IntelImgClfDataModule(pl.LightningDataModule):
     def __init__(
         self,
-        train_data_dir: str = "data/",
-        test_data_dir: str = "data/",
+        data_dir: str = "data/",
         batch_size: int = 256,
         num_workers: int = 0,
         pin_memory: bool = False,
@@ -32,8 +21,7 @@ class FlowerDataModule(pl.LightningDataModule):
         # also ensures init params will be stored in ckpt
         self.save_hyperparameters(logger=False)
 
-        self.train_data_dir = train_data_dir
-        self.test_data_dir = test_data_dir
+        self.data_dir = Path(data_dir)
 
         # data transformations
         self.transforms = T.Compose(
@@ -68,10 +56,11 @@ class FlowerDataModule(pl.LightningDataModule):
         """
         # load and split datasets only if not loaded already
         if not self.data_train and not self.data_test:
-            trainset = ImageFolder(self.train_data_dir, transform=self.transforms)
-            testset = ImageFolder(self.test_data_dir, transform=self.transforms)
+            trainset = ImageFolder(self.data_dir / "train", transform=self.transforms)
+            testset = ImageFolder(self.data_dir / "test", transform=self.transforms)
+            valset = ImageFolder(self.data_dir / "val", transform=self.transforms)
 
-            self.data_train, self.data_test = trainset, testset
+            self.data_train, self.data_test, self.data_val = trainset, testset, valset
 
     def train_dataloader(self):
         return DataLoader(
@@ -84,7 +73,7 @@ class FlowerDataModule(pl.LightningDataModule):
 
     def val_dataloader(self):
         return DataLoader(
-            dataset=self.data_train,
+            dataset=self.data_val,
             batch_size=self.hparams.batch_size,
             num_workers=self.hparams.num_workers,
             pin_memory=self.hparams.pin_memory,

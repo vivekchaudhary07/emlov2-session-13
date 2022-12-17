@@ -1,8 +1,3 @@
-import json
-import os
-import subprocess
-from datetime import datetime
-from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
 import pytorch_lightning as pl
@@ -10,11 +5,7 @@ import timm
 import torch
 import torch.nn.functional as F
 import torchvision.transforms as T
-from pytorch_lightning import loggers as pl_loggers
-from pytorch_lightning.plugins.environments import LightningEnvironment
-from torch.utils.data import DataLoader, Dataset
 from torchmetrics.functional import accuracy
-from torchvision.datasets import ImageFolder
 
 
 class LitResnet(pl.LightningModule):
