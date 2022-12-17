@@ -1,2 +1,9 @@
 _repack*
 .ipynb_checkpoints/
+temp.py
+*.pyc
+.DS_Store
+**/__pycache__/**
+.vscode
+tmp.py
+data
